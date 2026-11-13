@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Video Player</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: system-ui, sans-serif;
+    }
+
+    #player {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+
+    video {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* Keep the entire video visible. */
+      background: #000;
+    }
+
+    #controls {
+      position: absolute;
+      right: 12px;
+      bottom: 14px;
+      display: flex;
+      gap: 8px;
+      opacity: 0.3;
+      transition: opacity 150ms;
+    }
+
+    #controls:hover,
+    #controls:focus-within {
+      opacity: 1;
+    }
+
+    button {
+      padding: 7px 10px;
+      border: 1px solid #ffffff35;
+      border-radius: 5px;
+      background: #0009;
+      color: #fff;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    #progress-track {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: #ffffff12;
+      pointer-events: none;
+    }
+
+    #progress {
+      width: 100%;
+      height: 100%;
+      background: #ffffff70;
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+  </style>
+</head>
+<body>
+  <main id="player">
+    <!-- Change video.mp4 below if your file has a different name. -->
+    <video
+      id="video"
+      src="./video.mp4"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="auto"
+      aria-label="Looping video. Click to restart."
+    ></video>
+
+    <div id="controls">
+      <button id="sound" type="button">Unmute</button>
+      <button id="fullscreen" type="button">Fullscreen</button>
+    </div>
+
+    <div id="progress-track" aria-hidden="true">
+      <div id="progress"></div>
+    </div>
+  </main>
+
+  <script>
+    const player = document.getElementById("player");
+    const video = document.getElementById("video");
+    const progress = document.getElementById("progress");
+    const soundButton = document.getElementById("sound");
+    const fullscreenButton = document.getElementById("fullscreen");
+
+    // Clicking anywhere on the video—including black bars—restarts it.
+    video.addEventListener("click", () => {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    });
+
+    // Update the subtle bottom progress bar.
+    function updateProgress() {
+      const fraction = Number.isFinite(video.duration) && video.duration > 0
+        ? video.currentTime / video.duration
+        : 0;
+
+      progress.style.transform = `scaleX(${fraction})`;
+    }
+
+    video.addEventListener("timeupdate", updateProgress);
+    video.addEventListener("loadedmetadata", updateProgress);
+    video.addEventListener("seeking", updateProgress);
+
+    soundButton.addEventListener("click", () => {
+      video.muted = !video.muted;
+      soundButton.textContent = video.muted ? "Unmute" : "Mute";
+      video.play().catch(() => {});
+    });
+
+    fullscreenButton.addEventListener("click", async () => {
+      try {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        } else if (player.requestFullscreen) {
+          await player.requestFullscreen();
+        } else if (video.webkitEnterFullscreen) {
+          // Fallback for some versions of Safari on iPhone.
+          video.webkitEnterFullscreen();
+        }
+      } catch (error) {
+        console.warn("Fullscreen was not available:", error);
+      }
+    });
+
+    // Esc exits fullscreen normally; keep the button label in sync.
+    document.addEventListener("fullscreenchange", () => {
+      fullscreenButton.textContent = document.fullscreenElement
+        ? "Exit fullscreen"
+        : "Fullscreen";
+    });
+  </script>
+</body>
+</html>
